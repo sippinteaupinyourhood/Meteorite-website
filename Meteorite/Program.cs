@@ -12,7 +12,7 @@ namespace Meteorite
 {
     internal class Program
     {
-        public const string VERSION = "1.0.0";
+        public const string VERSION = "0.0.0";
         public static PhotinoWindow? MainWindow { get; private set; }
 
         [STAThread]
