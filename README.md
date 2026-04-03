@@ -7,7 +7,10 @@
 </div>
 
 # Meteorite
-A downloader client for Medal.tv (Still a Work In Progress)
+A downloader client for Medal.tv (W.I.P)
+
+> [!IMPORTANT]
+> If you want to test it you can by downloading the source and building/compiling it. Keep in mind this is not fully released and is Still a Work In Progress!
 
 # Features
 - Download Medal.tv clips (Removes Watermark)
