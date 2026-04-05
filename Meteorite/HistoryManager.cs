@@ -10,8 +10,8 @@ namespace Meteorite
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Url { get; set; } = "";
         public string FilePath { get; set; } = "";
-        public string ThumbnailUrl { get; set; } = "";
         public string Title { get; set; } = "";
+        public long FileSize { get; set; } = 0;
         public DateTime DownloadDate { get; set; } = DateTime.Now;
     }
 

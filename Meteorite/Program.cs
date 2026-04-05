@@ -1,4 +1,4 @@
-﻿using Photino.NET;
+using Photino.NET;
 using System;
 using System.Drawing;
 using System.IO;
@@ -15,7 +15,7 @@ namespace Meteorite
     {
         public const string VERSION = "0.1.0";
 
-        public const string VERSION_URL = "https://test.scrim.dev/app.version";
+        public const string VERSION_URL = "https://raw.githubusercontent.com/scrim-dev/Meteorite/refs/heads/main/app.version";
 
         public const int UPDATE_SNOOZE_DAYS = 3;
 
@@ -34,8 +34,8 @@ namespace Meteorite
             MainWindow = new PhotinoWindow()
                 .SetTitle("Meteorite")
                 .SetUseOsDefaultSize(false)
-                .SetSize(new Size(900, 600))
-                .SetMinSize(900, 600)
+                .SetSize(new Size(1100, 700))
+                .SetMinSize(1100, 700)
                 .Center().SetDevToolsEnabled(false).SetContextMenuEnabled(false).SetIconFile("GUI\\logo.ico")
                 .SetMediaAutoplayEnabled(true)
                 .SetResizable(true)
@@ -117,7 +117,7 @@ namespace Meteorite
             }
             catch (Exception ex)
             {
-                // Silently ignore — network may be unavailable
+                // Silently ignore - network may be unavailable
                 Logger.Log($"Update check failed: {ex.Message}", "DEBUG");
                 Send(window, "update_not_needed", null);
             }
@@ -149,11 +149,10 @@ namespace Meteorite
                     SettingsManager.Current.DownloadPath = newSettings.DownloadPath;
                     SettingsManager.Current.Theme = newSettings.Theme;
                     SettingsManager.Current.AccentColor = newSettings.AccentColor;
-                    SettingsManager.Current.RainbowMode = newSettings.RainbowMode;
                     SettingsManager.Current.AutoDownloader = newSettings.AutoDownloader;
                     SettingsManager.Current.SidebarCollapsed = newSettings.SidebarCollapsed;
-                    SettingsManager.Current.EasterEggUnlocked = newSettings.EasterEggUnlocked;
                     SettingsManager.Current.SmoothScrolling = newSettings.SmoothScrolling;
+                    SettingsManager.Current.GUIScale = newSettings.GUIScale;
                     SettingsManager.Save();
                     Logger.Log("Settings saved successfully.", "INFO");
                     Program.Send(window, "settings_saved", null);
@@ -249,12 +248,14 @@ namespace Meteorite
                     if (success)
                     {
                         Logger.Log($"Download complete: {destination}", "INFO");
+                        long fileSize = 0;
+                        try { fileSize = new FileInfo(destination).Length; } catch { }
                         var entry = new HistoryEntry
                         {
                             Url = cleanUrl,
                             FilePath = destination,
                             Title = $"Medal Clip {clipId}",
-                            ThumbnailUrl = ""
+                            FileSize = fileSize
                         };
                         HistoryManager.AddEntry(entry);
                         Program.Send(window, "download_status", new { status = "success", entry = entry });

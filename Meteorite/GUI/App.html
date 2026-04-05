@@ -71,7 +71,6 @@
                 <li class="nav-item" data-tab="settings" id="nav-settings" title="Settings">
                     <span class="icon"><i class="fa-solid fa-gear"></i></span>
                     <span class="nav-label">Settings</span>
-                    <span class="egg-indicator" id="egg-indicator">✦</span>
                 </li>
                 <li class="nav-item" data-tab="applogs" id="nav-applogs" title="App Logs">
                     <span class="icon"><i class="fa-solid fa-terminal"></i></span>
@@ -183,6 +182,7 @@
                 <div class="view-header">
                     <div>
                         <h1>Settings</h1>
+                        <p>Changes are saved automatically when you leave this tab.</p>
                     </div>
                 </div>
                 <div class="panel">
@@ -237,15 +237,14 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="setting-item" id="rainbow-setting" style="display:none;">
-                            <label>Rainbow Mode <span class="egg-badge">✦ Easter Egg</span></label>
-                            <label class="switch">
-                                <input type="checkbox" id="rainbow-mode">
-                                <span class="slider"></span>
-                            </label>
+                        <div class="setting-item">
+                            <label>GUI Scale: <span id="gui-scale-label">100%</span></label>
+                            <div class="scale-slider-row">
+                                <span class="scale-bound">70%</span>
+                                <input type="range" id="gui-scale" min="70" max="150" step="5" value="100">
+                                <span class="scale-bound">150%</span>
+                            </div>
                         </div>
-                        <button id="btn-save-settings" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save
-                            Settings</button>
                         <div id="settings-status" class="status-message"></div>
                     </div>
                 </div>
@@ -278,17 +277,11 @@
                         <div class="credits-block-title"><i class="fa-solid fa-star"></i> Credits</div>
                         <div class="credit-row">
                             <span class="credit-role">Created &amp; Developed by</span>
-                            <span class="credit-name"><span class="sparkle-wrapper"><span
-                                        class="rainbow-name">Scrim-Dev</span><span class="sparkle"
-                                        style="--d:0s;--x:8px;--y:-8px;">✦</span><span class="sparkle"
-                                        style="--d:0.3s;--x:-6px;--y:-12px;">✦</span><span class="sparkle"
-                                        style="--d:0.6s;--x:14px;--y:-4px;">✦</span></span></span>
+                            <span class="credit-name">Scrim-Dev</span>
                         </div>
                         <div class="credit-row">
                             <span class="credit-role">UI/UX Design by</span>
-                            <span class="credit-name"><span class="sparkle-wrapper"><span
-                                        class="rainbow-name">Scrim-Dev</span><span class="sparkle"
-                                        style="--d:0.2s;--x:10px;--y:-10px;">✦</span></span> &amp; Claude AI</span>
+                            <span class="credit-name">Scrim-Dev &amp; Claude AI</span>
                         </div>
                         <div class="credit-row">
                             <span class="credit-role">Medal API (TypeScript)</span>
@@ -300,7 +293,7 @@
                         </div>
                         <div class="credit-row credit-row-special">
                             <span class="credit-role">Special Thanks</span>
-                            <span class="credit-name">Photino — for the incredible framework</span>
+                            <span class="credit-name">Photino - for the incredible framework</span>
                         </div>
                     </div>
                 </div>
@@ -359,16 +352,16 @@
     <div id="update-modal" class="modal-overlay" style="display:none;">
         <div class="modal-card update-modal-card">
             <div class="update-modal-icon"><i class="fa-solid fa-circle-up"></i></div>
-            <h3>Version Mismatch</h3>
-            <p id="update-modal-message">A newer version of Meteorite is available. Update to the latest for new features and fixes.</p>
+            <h3>Update Available</h3>
+            <p id="update-modal-message">A newer version of Meteorite is available. Update to get the latest features and fixes.</p>
             <div class="update-version-row">
-                <span class="update-version-badge current" id="update-current-badge">Current: —</span>
+                <span class="update-version-badge current" id="update-current-badge">Current: ...</span>
                 <i class="fa-solid fa-arrow-right update-arrow"></i>
-                <span class="update-version-badge latest" id="update-latest-badge">Latest: —</span>
+                <span class="update-version-badge latest" id="update-latest-badge">Latest: ...</span>
             </div>
             <div class="modal-buttons">
                 <button class="btn-primary" id="btn-update-now"><i class="fa-solid fa-circle-up"></i> Update Now</button>
-                <button class="btn-secondary" id="btn-update-later">Later</button>
+                <button class="btn-secondary" id="btn-update-later">Skip for Now</button>
             </div>
         </div>
     </div>

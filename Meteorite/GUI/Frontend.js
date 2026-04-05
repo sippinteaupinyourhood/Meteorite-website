@@ -9,12 +9,11 @@ let downloadQueue = [];
 let queueRunning = false;
 let selectedTheme = 'dark';
 let selectedAccent = '#BEF837';
-let rainbowModeOn = false;
 let smoothScrollingOn = true;
+let guiScale = 100;
 let tourStep = 0;
 let sidebarCollapsed = false;
-let easterEggUnlocked = false;
-let settingsClickCount = 0;
+let currentTab = 'downloader';
 
 const TOUR_STEPS = [
     {
@@ -25,7 +24,7 @@ const TOUR_STEPS = [
     {
         target: 'tour-panel-options',
         title: 'Download Options',
-        text: 'Choose what happens after a clip finishes — auto-open the folder or auto-play the video.'
+        text: 'Choose what happens after a clip finishes: auto-open the folder or auto-play the video.'
     },
     {
         target: 'tour-panel-queue',
@@ -35,22 +34,22 @@ const TOUR_STEPS = [
     {
         target: 'nav-history',
         title: 'History',
-        text: 'Every clip you download is logged here with its date, URL, and file location.'
+        text: 'Every clip you download is logged here with its title, URL, date, file path, and size.'
     },
     {
         target: 'nav-settings',
         title: 'Settings',
-        text: 'Set your download folder, monitor clipboard, and pick colors. Pst... I heard clicking this 10 times unlocks a hidden surprise. Watch the spinning star!'
+        text: 'Set your download folder, pick a theme and accent color, adjust GUI scale, and more. Settings autosave when you leave this tab.'
     },
     {
         target: 'nav-applogs',
         title: 'App Logs',
-        text: 'Real-time log output from the backend — useful for seeing exactly what\'s happening and troubleshooting.'
+        text: 'Real-time log output from the backend, useful for seeing exactly what\'s happening and troubleshooting.'
     },
     {
         target: 'nav-about',
         title: 'About',
-        text: 'App version info, links, and credits. That\'s the tour — you\'re all set to use Meteorite!'
+        text: 'App version info, links, and credits. That\'s the tour - you\'re all set to use Meteorite!'
     }
 ];
 
@@ -72,17 +71,15 @@ function handleBackendMessage(type, data) {
 
         selectedTheme = data.Theme || 'dark';
         selectedAccent = data.AccentColor || '#BEF837';
-        rainbowModeOn = !!data.RainbowMode;
-        smoothScrollingOn = data.SmoothScrolling !== false; // default true
+        smoothScrollingOn = data.SmoothScrolling !== false;
+        guiScale = data.GUIScale || 100;
         sidebarCollapsed = !!data.SidebarCollapsed;
-        easterEggUnlocked = !!data.EasterEggUnlocked;
 
         applyTheme(selectedTheme);
         applyAccent(selectedAccent);
-        applyRainbowMode(rainbowModeOn);
         applySmoothScrolling(smoothScrollingOn);
+        applyGuiScale(guiScale);
         applySidebarState(sidebarCollapsed);
-        applyEasterEggState(easterEggUnlocked);
 
         syncSettingsUI();
         return;
@@ -133,7 +130,7 @@ function handleBackendMessage(type, data) {
         return;
     }
     if (type === 'update_not_needed') {
-        // Nothing to do — silently pass
+        // Nothing to do - silently pass
         return;
     }
 }
@@ -154,27 +151,37 @@ function applyAccent(color) {
     document.getElementById('cp-preview').style.backgroundColor = color;
 }
 
-function applyRainbowMode(on) {
-    document.body.classList.toggle('rainbow-mode', on);
-}
-
 function applySmoothScrolling(on) {
     document.documentElement.classList.toggle('no-smooth-scroll', !on);
+}
+
+function applyGuiScale(scale) {
+    guiScale = scale;
+    const factor = scale / 100;
+    // Use transform + inverse dimensions so content is never clipped at any scale
+    document.documentElement.style.setProperty('--gui-scale', factor);
+    const container = document.querySelector('.app-container');
+    if (container) {
+        container.style.width  = (100 / factor) + 'vw';
+        container.style.height = (100 / factor) + 'vh';
+    }
+    // Update label and slider
+    const lbl = document.getElementById('gui-scale-label');
+    if (lbl) lbl.textContent = scale + '%';
+    const slider = document.getElementById('gui-scale');
+    if (slider) {
+        slider.value = scale;
+        // Fill the track left of the thumb with accent color
+        const min = parseInt(slider.min, 10) || 70;
+        const max = parseInt(slider.max, 10) || 150;
+        const pct = ((scale - min) / (max - min) * 100).toFixed(2) + '%';
+        slider.style.setProperty('--slider-fill', pct);
+    }
 }
 
 function applySidebarState(collapsed) {
     const sidebar = document.getElementById('sidebar');
     sidebar.classList.toggle('collapsed', collapsed);
-}
-
-function applyEasterEggState(unlocked) {
-    document.getElementById('rainbow-setting').style.display = unlocked ? 'block' : 'none';
-    if (unlocked) {
-        // Hide the indicator permanently once unlocked
-        const indicator = document.getElementById('egg-indicator');
-        indicator.style.opacity = '0';
-        indicator.classList.remove('spinning');
-    }
 }
 
 function syncSettingsUI() {
@@ -184,23 +191,27 @@ function syncSettingsUI() {
     document.querySelectorAll('.swatch').forEach(sw => {
         sw.classList.toggle('active', sw.getAttribute('data-color').toLowerCase() === selectedAccent.toLowerCase());
     });
-    const rainbowCheck = document.getElementById('rainbow-mode');
-    if (rainbowCheck) rainbowCheck.checked = rainbowModeOn;
 
     const smoothCheck = document.getElementById('smooth-scrolling');
     if (smoothCheck) smoothCheck.checked = smoothScrollingOn;
+
+    const scaleSlider = document.getElementById('gui-scale');
+    if (scaleSlider) scaleSlider.value = guiScale;
+    const scaleLbl = document.getElementById('gui-scale-label');
+    if (scaleLbl) scaleLbl.textContent = guiScale + '%';
 }
 
 function saveCurrentSettings() {
+    selectedTheme = document.querySelector('.theme-btn.active')?.getAttribute('data-theme') || selectedTheme;
+    smoothScrollingOn = document.getElementById('smooth-scrolling')?.checked ?? smoothScrollingOn;
     sendMessageToBackend('save_settings', {
         DownloadPath: document.getElementById('download-path').value.trim(),
         Theme: selectedTheme,
         AccentColor: selectedAccent,
-        RainbowMode: rainbowModeOn,
         AutoDownloader: document.getElementById('auto-downloader').checked,
         SidebarCollapsed: sidebarCollapsed,
-        EasterEggUnlocked: easterEggUnlocked,
-        SmoothScrolling: smoothScrollingOn
+        SmoothScrolling: smoothScrollingOn,
+        GUIScale: guiScale
     });
 }
 
@@ -331,6 +342,13 @@ document.addEventListener('DOMContentLoaded', () => {
     navItems.forEach(item => {
         item.addEventListener('click', () => {
             const tabId = item.getAttribute('data-tab');
+
+            // Autosave settings when leaving the settings tab
+            if (currentTab === 'settings' && tabId !== 'settings') {
+                saveCurrentSettings();
+            }
+
+            currentTab = tabId;
             navItems.forEach(n => n.classList.remove('active'));
             item.classList.add('active');
             views.forEach(v => {
@@ -339,22 +357,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (tabId === 'history') sendMessageToBackend('get_history');
             if (tabId === 'settings') sendMessageToBackend('get_settings');
-
-            if (tabId === 'settings' && !easterEggUnlocked) {
-                settingsClickCount++;
-                const indicator = document.getElementById('egg-indicator');
-
-                // Show the spinning star immediately on first click; grow opacity with each click
-                indicator.classList.add('spinning');
-                indicator.style.opacity = Math.min(settingsClickCount / 10, 1).toString();
-
-                if (settingsClickCount >= 10) {
-                    easterEggUnlocked = true;
-                    applyEasterEggState(true);
-                    showModal('Easter Egg Unlocked!', 'You\'ve unlocked the secret Rainbow Mode in Settings! ✦', 'alert');
-                    saveCurrentSettings();
-                }
-            }
         });
     });
 
@@ -365,17 +367,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('medal-url').addEventListener('keydown', e => {
         if (e.key === 'Enter') document.getElementById('btn-download').click();
-    });
-
-    document.getElementById('btn-save-settings').addEventListener('click', () => {
-        selectedTheme = document.querySelector('.theme-btn.active')?.getAttribute('data-theme') || 'dark';
-        rainbowModeOn = document.getElementById('rainbow-mode').checked;
-        smoothScrollingOn = document.getElementById('smooth-scrolling').checked;
-        applySmoothScrolling(smoothScrollingOn);
-        saveCurrentSettings();
-        applyTheme(selectedTheme);
-        applyAccent(selectedAccent);
-        applyRainbowMode(rainbowModeOn);
     });
 
     document.querySelectorAll('.theme-btn').forEach(btn => {
@@ -447,14 +438,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('color-picker-modal').style.display = 'none';
     });
 
-    document.getElementById('rainbow-mode').addEventListener('change', e => {
-        rainbowModeOn = e.target.checked;
-        applyRainbowMode(rainbowModeOn);
-    });
-
     document.getElementById('smooth-scrolling').addEventListener('change', e => {
         smoothScrollingOn = e.target.checked;
         applySmoothScrolling(smoothScrollingOn);
+    });
+
+    // GUI Scale slider
+    document.getElementById('gui-scale').addEventListener('input', e => {
+        const val = parseInt(e.target.value, 10);
+        applyGuiScale(val);
     });
 
     document.getElementById('btn-clear-history').addEventListener('click', () => {
@@ -508,7 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update modal buttons
     document.getElementById('btn-update-now').addEventListener('click', () => {
-        sendMessageToBackend('open_url', 'https://github.com/scrim-dev/Meteorite/releases');
+        sendMessageToBackend('open_url', 'https://github.com/scrim-dev/Meteorite/releases/latest');
         document.getElementById('update-modal').style.display = 'none';
     });
     document.getElementById('btn-update-later').addEventListener('click', () => {
@@ -580,9 +572,9 @@ function startTour() {
 }
 
 /**
- * showTourStep — scrolls the target element into view first, then
- * positions the highlight box and tooltip over it.
- * Uses a short delay after scrollIntoView so the layout has settled.
+ * showTourStep - scrolls the target element into view, waits for scroll to
+ * fully settle, then snaps the highlight and tooltip into place.
+ * The highlight has no CSS transition so it always reflects the post-scroll position.
  */
 function showTourStep(idx) {
     const step = TOUR_STEPS[idx];
@@ -597,25 +589,36 @@ function showTourStep(idx) {
         ? '<i class="fa-solid fa-check"></i> Done'
         : 'Next <i class="fa-solid fa-arrow-right"></i>';
 
+    // Hide both while repositioning to avoid flash of wrong position
+    highlight.style.display = 'none';
+    tooltip.style.display = 'none';
+
     if (!targetEl) {
         tooltip.style.display = 'block';
         return;
     }
 
-    // Scroll target into view, then position after animation settles
-    targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    // Scroll the content panel (not window) so the highlight stays fixed-correct
+    const contentEl = document.querySelector('.content');
+    const activeView = document.querySelector('.view.active');
+    if (activeView) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
 
     const positionOverlay = () => {
         const rect = targetEl.getBoundingClientRect();
         const pad = 8;
+
+        // Highlight - fixed position based on viewport rect
         highlight.style.top    = (rect.top  - pad) + 'px';
         highlight.style.left   = (rect.left - pad) + 'px';
         highlight.style.width  = (rect.width  + pad * 2) + 'px';
         highlight.style.height = (rect.height + pad * 2) + 'px';
         highlight.style.display = 'block';
 
+        // Tooltip - positioned relative to viewport
         const tipW = 320;
-        const tipH = 160;
+        const tipH = 170;
         let tipTop  = rect.bottom + 16;
         let tipLeft = rect.left;
         if (tipTop + tipH > window.innerHeight)  tipTop  = rect.top - tipH - 16;
@@ -628,10 +631,9 @@ function showTourStep(idx) {
         tooltip.style.display = 'block';
     };
 
-    // Wait for scroll animation (smooth scroll can take ~300-400ms)
-    // Use requestAnimationFrame + setTimeout to ensure layout is complete
+    // Wait for smooth scroll to settle (~500ms), then snap positions
     requestAnimationFrame(() => {
-        setTimeout(positionOverlay, 350);
+        setTimeout(positionOverlay, 500);
     });
 }
 
@@ -661,11 +663,18 @@ function showUpdateModal(currentVersion, latestVersion) {
     document.getElementById('update-modal').style.display = 'flex';
 }
 
+function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return 'Unknown size';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(2) + ' MB';
+}
+
 function renderHistory(list) {
     const container = document.getElementById('history-list');
     container.innerHTML = '';
     if (!list || list.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px;">No download history.</p>';
+        container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:40px 20px;"><i class="fa-solid fa-inbox" style="font-size:2rem;display:block;margin-bottom:10px;opacity:0.4;"></i>No download history yet.</p>';
         return;
     }
     list.forEach(entry => {
@@ -673,20 +682,85 @@ function renderHistory(list) {
         const item = document.createElement('div');
         item.className = 'history-item';
 
+        // Left: icon + details
+        const iconEl = document.createElement('div');
+        iconEl.className = 'history-icon';
+        iconEl.innerHTML = '<i class="fa-solid fa-film"></i>';
+
         const det = document.createElement('div');
         det.className = 'history-details';
-        det.innerHTML = `<h3>${entry.Title}</h3><p>${date} &bull; ${entry.Url}</p>`;
 
+        const titleEl = document.createElement('div');
+        titleEl.className = 'history-title';
+        titleEl.textContent = entry.Title || 'Untitled Clip';
+
+        const metaEl = document.createElement('div');
+        metaEl.className = 'history-meta';
+
+        const urlSpan = document.createElement('span');
+        urlSpan.className = 'history-url';
+        urlSpan.textContent = entry.Url;
+        urlSpan.title = entry.Url;
+
+        const sep1 = document.createElement('span');
+        sep1.className = 'history-sep';
+        sep1.textContent = '·';
+
+        const dateSpan = document.createElement('span');
+        dateSpan.textContent = date;
+
+        const sep2 = document.createElement('span');
+        sep2.className = 'history-sep';
+        sep2.textContent = '·';
+
+        const sizeSpan = document.createElement('span');
+        sizeSpan.className = 'history-size';
+        sizeSpan.textContent = formatFileSize(entry.FileSize);
+
+        metaEl.appendChild(urlSpan);
+        metaEl.appendChild(sep1);
+        metaEl.appendChild(dateSpan);
+        metaEl.appendChild(sep2);
+        metaEl.appendChild(sizeSpan);
+
+        // File path row
+        const pathEl = document.createElement('div');
+        pathEl.className = 'history-path';
+        pathEl.innerHTML = `<i class="fa-solid fa-folder"></i> ${entry.FilePath || 'Path unknown'}`;
+
+        det.appendChild(titleEl);
+        det.appendChild(metaEl);
+        det.appendChild(pathEl);
+
+        // Actions
         const actions = document.createElement('div');
         actions.className = 'history-actions';
 
+        const openBtn = document.createElement('button');
+        openBtn.className = 'btn-secondary history-action-btn';
+        openBtn.title = 'Open file location';
+        openBtn.innerHTML = '<i class="fa-solid fa-folder-open"></i>';
+        openBtn.onclick = () => sendMessageToBackend('open_folder', entry.FilePath);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'btn-secondary history-action-btn';
+        copyBtn.title = 'Copy URL';
+        copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i>';
+        copyBtn.onclick = () => {
+            showModal('Clip URL', 'Source URL for this clip:', 'prompt', null, entry.Url);
+        };
+
         const delBtn = document.createElement('button');
-        delBtn.className = 'btn-danger';
-        delBtn.style.cssText = 'height:30px;padding:0 12px;font-size:11px;';
+        delBtn.className = 'btn-danger history-action-btn';
+        delBtn.title = 'Remove from history';
         delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
         delBtn.onclick = () => sendMessageToBackend('delete_history_entry', entry.Id);
 
+        actions.appendChild(openBtn);
+        actions.appendChild(copyBtn);
         actions.appendChild(delBtn);
+
+        item.appendChild(iconEl);
         item.appendChild(det);
         item.appendChild(actions);
         container.appendChild(item);
@@ -734,7 +808,7 @@ function showModal(title, message, type, confirmCallback, inputText) {
 
         const copyBtn = document.createElement('button');
         copyBtn.className = 'btn-primary';
-        copyBtn.textContent = 'Copy Path';
+        copyBtn.textContent = 'Copy';
         copyBtn.onclick = () => { inputEl.select(); document.execCommand('copy'); closeModal(); };
 
         const closeBtn = document.createElement('button');
