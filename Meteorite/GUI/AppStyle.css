@@ -121,7 +121,7 @@ input[type="checkbox"] {
     gap: 4px;
     flex-shrink: 0;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logo {
@@ -907,16 +907,9 @@ input[type="range"]#gui-scale {
     flex: 1;
     -webkit-appearance: none;
     appearance: none;
-    height: 6px;
+    height: 18px;
     border-radius: 3px;
-    /* filled left side driven by --slider-fill set in JS */
-    background: linear-gradient(
-        to right,
-        var(--accent) 0%,
-        var(--accent) var(--slider-fill, 37.5%),
-        var(--bg-hover) var(--slider-fill, 37.5%),
-        var(--bg-hover) 100%
-    );
+    background: transparent;
     border: none;
     outline: none;
     cursor: pointer;
@@ -925,8 +918,15 @@ input[type="range"]#gui-scale {
 }
 
 input[type="range"]#gui-scale::-webkit-slider-runnable-track {
+    width: 100%;
     height: 6px;
     border-radius: 3px;
+    /* filled left side driven by --slider-fill set in JS */
+    background: linear-gradient(to right,
+            var(--accent) 0%,
+            var(--accent) var(--slider-fill, 37.5%),
+            var(--bg-hover) var(--slider-fill, 37.5%),
+            var(--bg-hover) 100%);
 }
 
 input[type="range"]#gui-scale::-webkit-slider-thumb {
@@ -934,6 +934,7 @@ input[type="range"]#gui-scale::-webkit-slider-thumb {
     appearance: none;
     width: 18px;
     height: 18px;
+    margin-top: -6px;
     border-radius: 50%;
     background: var(--accent);
     cursor: pointer;
